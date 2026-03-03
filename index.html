@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Edukasi Atmosfer</title>
+    <title>Game Atmosfer - Skor 0-100</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -16,54 +16,68 @@
             padding: 20px;
         }
 
+        .score-board {
+            font-size: 24px;
+            font-weight: bold;
+            background: #16213e;
+            padding: 10px 30px;
+            border-radius: 50px;
+            border: 2px solid #e94560;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+        }
+
         .game-wrapper {
             position: relative;
-            width: 500px; /* Sesuaikan dengan lebar gambar */
-            margin: 20px auto;
+            width: 500px;
+            margin: 0 auto;
         }
 
         #bg-image {
             width: 100%;
             display: block;
             border-radius: 15px;
-            opacity: 0.8;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* Container untuk label yang bisa ditarik */
         .label-container {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             justify-content: center;
         }
 
         .draggable {
-            padding: 10px 15px;
-            background: #e94560;
+            padding: 10px 20px;
+            background: #0f3460;
             color: white;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: grab;
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid #e94560;
+            transition: transform 0.2s;
         }
 
-        /* Titik-titik Drop (Drop Zones) yang diletakkan di atas gambar */
+        .draggable:active { cursor: grabbing; }
+
         .drop-zone {
             position: absolute;
             width: 140px;
             height: 40px;
-            border: 2px dashed #fff;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
             background: rgba(255, 255, 255, 0.1);
             border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             transform: translateX(-50%);
-            left: 25%; /* Mengatur posisi horizontal label */
+            left: 25%;
+            font-weight: bold;
+            transition: all 0.3s;
         }
 
-        /* Mengatur posisi vertikal tiap zona sesuai gambar */
+        /* Posisi Zona Drop Sesuai Gambar */
         #zone-exosphere { top: 3%; }
         #zone-thermosphere { top: 22%; }
         #zone-mesosphere { top: 40%; }
@@ -71,32 +85,37 @@
         #zone-troposphere { top: 68%; }
 
         .correct {
-            background: #4caf50 !important;
+            background: rgba(76, 175, 80, 0.9) !important;
             border: 2px solid #fff !important;
-            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 10px #4caf50;
         }
 
         #message {
-            height: 30px;
-            margin: 15px 0;
-            font-size: 1.2em;
+            margin: 20px 0;
+            font-size: 1.5em;
             color: #4caf50;
+            font-weight: bold;
+            text-align: center;
         }
 
-        button {
-            padding: 10px 20px;
-            background: #0f3460;
+        .btn-reset {
+            padding: 12px 25px;
+            background: #e94560;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: bold;
+            display: none; /* Muncul hanya saat selesai */
         }
     </style>
 </head>
 <body>
 
-    <h1>Tebak Lapisan Atmosfer 🌍</h1>
-    <p>Tarik nama lapisan ke kotak yang tepat di gambar!</p>
+    <h1>Misi Penempatan Atmosfer 🚀</h1>
+    
+    <div class="score-board">Skor: <span id="score">0</span> / 100</div>
 
     <div class="label-container" id="source-container">
         <div class="draggable" draggable="true" id="Exosphere">Exosphere</div>
@@ -117,43 +136,68 @@
     </div>
 
     <div id="message"></div>
-    <button onclick="location.reload()">Main Lagi</button>
+    <button class="btn-reset" id="reset-btn" onclick="location.reload()">Main Lagi!</button>
 
     <script>
         const draggables = document.querySelectorAll('.draggable');
         const dropZones = document.querySelectorAll('.drop-zone');
-        let solved = 0;
+        const scoreDisplay = document.getElementById('score');
+        const messageDisplay = document.getElementById('message');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let currentScore = 0;
+        let solvedCount = 0;
+        const pointsPerAnswer = 20;
+
+        // Acak urutan label di awal agar lebih menantang
+        const container = document.getElementById('source-container');
+        for (let i = container.children.length; i >= 0; i--) {
+            container.appendChild(container.children[Math.random() * i | 0]);
+        }
 
         draggables.forEach(draggable => {
-            draggable.addEventListener('dragstart', () => {
-                draggable.classList.add('dragging');
+            draggable.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', e.target.id);
+                draggable.style.opacity = '0.5';
             });
 
             draggable.addEventListener('dragend', () => {
-                draggable.classList.remove('dragging');
+                draggable.style.opacity = '1';
             });
         });
 
         dropZones.forEach(zone => {
-            zone.addEventListener('dragover', e => {
-                e.preventDefault();
-            });
+            zone.addEventListener('dragover', e => e.preventDefault());
 
             zone.addEventListener('drop', e => {
-                const draggable = document.querySelector('.dragging');
+                e.preventDefault();
+                const draggedId = e.dataTransfer.getData('text/plain');
                 const answer = zone.getAttribute('data-answer');
 
-                if (draggable.id === answer) {
+                // Jika benar dan zona tersebut belum terisi
+                if (draggedId === answer && !zone.classList.contains('correct')) {
+                    const element = document.getElementById(draggedId);
+                    
+                    // Update visual zona drop
                     zone.innerText = answer;
                     zone.classList.add('correct');
-                    draggable.style.display = 'none';
-                    solved++;
                     
-                    if(solved === 5) {
-                        document.getElementById('message').innerText = "Selamat! Kamu Pintar! ✨";
+                    // Sembunyikan label asal
+                    element.style.visibility = 'hidden';
+                    
+                    // Update Skor
+                    currentScore += pointsPerAnswer;
+                    scoreDisplay.innerText = currentScore;
+                    solvedCount++;
+
+                    // Cek kemenangan
+                    if (solvedCount === 5) {
+                        messageDisplay.innerHTML = "Misi Berhasil! 🌟<br>Kamu menguasai struktur atmosfer Bumi!";
+                        resetBtn.style.display = "block";
                     }
-                } else {
-                    alert("Salah tempat! Perhatikan ikon gambarnya.");
+                } else if (draggedId !== answer) {
+                    // Penalti kecil atau sekadar peringatan (opsional)
+                    alert("Ops! Itu bukan tempat untuk " + draggedId + ". Coba lagi!");
                 }
             });
         });
