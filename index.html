@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Lapisan Atmosfer</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e0f7fa; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #01579b; }
+        .game-container { display: flex; gap: 50px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .column { display: flex; flex-direction: column; gap: 15px; }
+        .layer-box { width: 180px; padding: 15px; background: #fff; border: 2px solid #0288d1; border-radius: 8px; cursor: grab; text-align: center; font-weight: bold; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+        .drop-zone { width: 250px; min-height: 50px; padding: 15px; background: #b3e5fc; border: 2px dashed #0288d1; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.9em; }
+        .drop-zone.hover { background: #81d4fa; }
+        .correct { background-color: #c8e6c9 !important; border-color: #2e7d32 !important; }
+        #message { margin-top: 20px; font-weight: bold; font-size: 1.2em; color: #2e7d32; }
+        button { margin-top: 20px; padding: 10px 20px; cursor: pointer; background: #0288d1; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>Pasangkan Lapisan Atmosfer! 🌍</h1>
+    <p>Tarik nama lapisan ke kotak kondisi yang sesuai.</p>
+
+    <div class="game-container">
+        <div class="column" id="layers">
+            <div class="layer-box" draggable="true" id="exosphere">Exosphere</div>
+            <div class="layer-box" draggable="true" id="thermosphere">Thermosphere</div>
+            <div class="layer-box" draggable="true" id="mesosphere">Mesosphere</div>
+            <div class="layer-box" draggable="true" id="stratosphere">Stratosphere</div>
+            <div class="layer-box" draggable="true" id="troposphere">Troposphere</div>
+        </div>
+
+        <div class="column">
+            <div class="drop-zone" data-target="exosphere">Tempat Satelit Mengorbit (Ketinggian > 690 km)</div>
+            <div class="drop-zone" data-target="thermosphere">Tempat munculnya Aurora & Fenomena Cahaya</div>
+            <div class="drop-zone" data-target="mesosphere">Tempat Meteor terbakar & hancur</div>
+            <div class="drop-zone" data-target="stratosphere">Tempat Balon Udara & Lapisan Ozon</div>
+            <div class="drop-zone" data-target="troposphere">Tempat Pesawat Terbang & Gejala Cuaca</div>
+        </div>
+    </div>
+
+    <div id="message"></div>
+    <button onclick="location.reload()">Reset Game</button>
+
+    <script>
+        const layers = document.querySelectorAll('.layer-box');
+        const zones = document.querySelectorAll('.drop-zone');
+        let score = 0;
+
+        layers.forEach(layer => {
+            layer.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text', e.target.id);
+            });
+        });
+
+        zones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => e.preventDefault());
+            zone.addEventListener('dragenter', (e) => zone.classList.add('hover'));
+            zone.addEventListener('dragleave', (e) => zone.classList.remove('hover'));
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('hover');
+                const draggedId = e.dataTransfer.getData('text');
+                const targetId = zone.getAttribute('data-target');
+
+                if (draggedId === targetId) {
+                    const originalElement = document.getElementById(draggedId);
+                    zone.textContent = originalElement.textContent + " - Benar!";
+                    zone.classList.add('correct');
+                    originalElement.style.visibility = 'hidden';
+                    score++;
+                    if (score === 5) {
+                        document.getElementById('message').textContent = "Luar Biasa! Kamu menguasai Atmosfer! 🚀";
+                    }
+                } else {
+                    alert("Ops! Coba pasangkan dengan yang lain.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
