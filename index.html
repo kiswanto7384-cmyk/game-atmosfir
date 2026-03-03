@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Atmosfer - Fix Version</title>
+    <title>Game Atmosfer - Edu Version</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -27,7 +27,16 @@
             box-shadow: 0 0 15px rgba(233, 69, 96, 0.4);
         }
 
-        /* Container utama game */
+        .instruction {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            text-align: center;
+            border-left: 5px solid #e94560;
+        }
+
         .game-container {
             display: flex;
             gap: 40px;
@@ -36,18 +45,16 @@
             max-width: 900px;
         }
 
-        /* Kolom Visual Atmosfer */
         .atmosphere-visual {
             width: 350px;
             border-radius: 15px;
             overflow: hidden;
             display: flex;
-            flex-direction: column-reverse; /* Urutan dari bawah ke atas */
+            flex-direction: column-reverse;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             background: linear-gradient(to top, #dcf8f9, #0a2f4a);
         }
 
-        /* Styling setiap lapisan di visual */
         .layer-zone {
             height: 80px;
             border-top: 1px dashed rgba(255,255,255,0.3);
@@ -56,17 +63,17 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+            cursor: help; /* Menandakan bisa diklik untuk info */
         }
 
-        /* Warna gradasi tiap zona (berdasarkan posisi) */
-        .layer-zone:nth-child(1) { background: rgba(220, 248, 249, 0.3); } /* Troposphere */
-        .layer-zone:nth-child(2) { background: rgba(166, 233, 241, 0.3); } /* Stratosphere */
-        .layer-zone:nth-child(3) { background: rgba(112, 197, 235, 0.3); } /* Mesosphere */
-        .layer-zone:nth-child(4) { background: rgba(62, 161, 220, 0.3); }  /* Thermosphere */
-        .layer-zone:nth-child(5) { background: rgba(10, 47, 74, 0.3); }   /* Exosphere */
+        .layer-zone:nth-child(1) { background: rgba(220, 248, 249, 0.3); }
+        .layer-zone:nth-child(2) { background: rgba(166, 233, 241, 0.3); }
+        .layer-zone:nth-child(3) { background: rgba(112, 197, 235, 0.3); }
+        .layer-zone:nth-child(4) { background: rgba(62, 161, 220, 0.3); }
+        .layer-zone:nth-child(5) { background: rgba(10, 47, 74, 0.3); }
 
         .layer-zone.hover { background: rgba(233, 69, 96, 0.4); }
-        .layer-zone.correct { background: rgba(76, 175, 80, 0.6); }
+        .layer-zone.correct { background: rgba(76, 175, 80, 0.6); cursor: default; }
 
         .altitude {
             position: absolute;
@@ -82,7 +89,6 @@
             font-size: 2rem;
         }
 
-        /* Kolom Nama Lapisan */
         .label-column {
             display: flex;
             flex-direction: column;
@@ -97,30 +103,38 @@
             cursor: grab;
             font-weight: bold;
             text-align: center;
-            transition: transform 0.2s;
         }
 
-        .draggable:active { cursor: grabbing; }
-        .draggable.hidden { visibility: hidden; }
-
-        #message {
-            margin-top: 20px;
-            font-size: 1.2rem;
-            color: #4caf50;
-            font-weight: bold;
-            min-height: 1.5em;
+        /* Styling Modal Info */
+        #info-box {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #16213e;
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid #e94560;
+            z-index: 100;
+            width: 300px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            text-align: center;
         }
 
-        button {
-            margin-top: 15px;
-            padding: 10px 25px;
-            background: #e94560;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
+        #info-box h3 { color: #e94560; margin-top: 0; }
+        #info-box button { background: #e94560; margin-top: 15px; width: 100%; }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 99;
         }
+
+        #message { margin-top: 20px; font-size: 1.2rem; color: #4caf50; font-weight: bold; }
+        button { padding: 10px 25px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -128,29 +142,33 @@
     <h1>Misi Penempatan Atmosfer 🚀</h1>
     <div class="score-board">Skor: <span id="score">0</span> / 100</div>
 
+    <div class="instruction">
+        💡 <b>Tips:</b> Klik pada lapisan warna untuk mempelajari fungsinya sebelum menyusun label!
+    </div>
+
     <div class="game-container">
         <div class="atmosphere-visual">
-            <div class="layer-zone" data-answer="troposphere">
+            <div class="layer-zone" data-answer="troposphere" onclick="showInfo('troposphere')">
                 <span class="emoji-icon">✈️</span>
                 <span class="altitude">0 - 20 km</span>
                 <span class="target-text">Drop Lapisan 1</span>
             </div>
-            <div class="layer-zone" data-answer="stratosphere">
+            <div class="layer-zone" data-answer="stratosphere" onclick="showInfo('stratosphere')">
                 <span class="emoji-icon">🎈</span>
                 <span class="altitude">20 - 50 km</span>
                 <span class="target-text">Drop Lapisan 2</span>
             </div>
-            <div class="layer-zone" data-answer="mesosphere">
+            <div class="layer-zone" data-answer="mesosphere" onclick="showInfo('mesosphere')">
                 <span class="emoji-icon">☄️</span>
                 <span class="altitude">50 - 85 km</span>
                 <span class="target-text">Drop Lapisan 3</span>
             </div>
-            <div class="layer-zone" data-answer="thermosphere">
+            <div class="layer-zone" data-answer="thermosphere" onclick="showInfo('thermosphere')">
                 <span class="emoji-icon">🌌</span>
                 <span class="altitude">85 - 690 km</span>
                 <span class="target-text">Drop Lapisan 4</span>
             </div>
-            <div class="layer-zone" data-answer="exosphere">
+            <div class="layer-zone" data-answer="exosphere" onclick="showInfo('exosphere')">
                 <span class="emoji-icon">🛰️</span>
                 <span class="altitude">> 690 km</span>
                 <span class="target-text">Drop Lapisan 5</span>
@@ -166,16 +184,59 @@
         </div>
     </div>
 
+    <div class="overlay" id="overlay" onclick="closeInfo()"></div>
+    <div id="info-box">
+        <h3 id="info-title">Judul</h3>
+        <p id="info-text">Deskripsi</p>
+        <button onclick="closeInfo()">Mengerti!</button>
+    </div>
+
     <div id="message"></div>
     <button onclick="location.reload()">Reset Game</button>
 
     <script>
+        // Data Pengetahuan Lapisan
+        const atmosphereData = {
+            troposphere: {
+                title: "Troposfer",
+                text: "Lapisan terendah tempat kita bernapas. Di sini terjadi fenomena cuaca seperti hujan, awan, dan tempat pesawat terbang."
+            },
+            stratosphere: {
+                title: "Stratosfer",
+                text: "Rumah bagi lapisan Ozon (O3) yang melindungi kita dari sinar UV matahari. Udara di sini sangat tenang."
+            },
+            mesosphere: {
+                title: "Mesosfer",
+                text: "Lapisan pelindung Bumi dari meteor. Meteor akan terbakar saat bergesekan dengan udara di lapisan dingin ini."
+            },
+            thermosphere: {
+                title: "Termosfer",
+                text: "Sangat panas! Tempat terjadinya Aurora yang indah dan tempat gelombang radio dipantulkan (Ionosfer)."
+            },
+            exosphere: {
+                title: "Eksosfer",
+                text: "Lapisan terluar yang berbatasan dengan luar angkasa. Tempat satelit-satelit buatan mengorbit Bumi."
+            }
+        };
+
+        function showInfo(layer) {
+            document.getElementById('info-title').innerText = atmosphereData[layer].title;
+            document.getElementById('info-text').innerText = atmosphereData[layer].text;
+            document.getElementById('info-box').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeInfo() {
+            document.getElementById('info-box').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // Logic Drag and Drop (Sama seperti sebelumnya)
         const draggables = document.querySelectorAll('.draggable');
         const zones = document.querySelectorAll('.layer-zone');
         let score = 0;
         let solved = 0;
 
-        // Acak urutan label
         const container = document.getElementById('label-container');
         for (let i = container.children.length; i >= 0; i--) {
             container.appendChild(container.children[Math.random() * i | 0]);
@@ -200,6 +261,7 @@
 
                 if (draggedId === answer && !zone.classList.contains('correct')) {
                     zone.classList.add('correct');
+                    zone.onclick = null; // Matikan info setelah benar agar tidak mengganggu
                     zone.querySelector('.target-text').innerText = draggedId.toUpperCase();
                     document.getElementById(draggedId).classList.add('hidden');
                     
@@ -211,7 +273,7 @@
                         document.getElementById('message').innerText = "Selamat! Kamu Berhasil! 🏆";
                     }
                 } else {
-                    if (draggedId !== answer) alert("Salah tempat! Perhatikan ketinggian dan ikonnya.");
+                    if (draggedId !== answer) alert("Salah tempat! Klik lapisan untuk melihat petunjuk fungsinya.");
                 }
             });
         });
