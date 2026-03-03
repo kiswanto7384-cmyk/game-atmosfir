@@ -1,90 +1,220 @@
-<style>
-    /* Tambahkan atau perbarui gaya CSS berikut di dalam tag <style> */
-    .game-container {
-        display: flex;
-        gap: 50px;
-        flex-wrap: wrap;
-        justify-content: center;
-        max-width: 1000px;
-        /* Hapus properti background: linear-gradient yang lama */
-    }
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Atmosfer - Fix Version</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
 
-    /* Latar Belakang Atmosfer Baru (Hapus Latar Belakang Lama) */
-    .column-with-bg {
-        width: 300px;
-        min-height: 400px;
-        border-radius: 10px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column-reverse; /* Menyusun dari bawah ke atas */
-        box-shadow: 0 0 15px rgba(0,0,0,0.3);
-        
-        /* Gradasi warna atmosfer yang bersih dan cerah (Dari Bumi ke Angkasa) */
-        background: linear-gradient(to top,
-            #dcf8f9 0%,   /* Troposphere (Dekat Bumi) */
-            #a6e9f1 15%,  /* Stratosphere */
-            #70c5eb 40%,  /* Mesosphere */
-            #3ea1dc 65%,  /* Thermosphere */
-            #0a2f4a 100% /* Exosphere (Luar Angkasa) */
-        );
-    }
+        .score-board {
+            font-size: 24px;
+            font-weight: bold;
+            background: #16213e;
+            padding: 10px 40px;
+            border-radius: 50px;
+            border: 2px solid #e94560;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.4);
+        }
 
-    /* Styling Elemen di Dalam Kolom Latar Belakang */
-    .atmosphere-layer-area {
-        height: 60px; /* Tinggi untuk setiap area drop */
-        border-bottom: 1px dashed rgba(255,255,255,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-    }
+        /* Container utama game */
+        .game-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+        }
 
-    /* Teks Ketinggian */
-    .altitude-text {
-        position: absolute;
-        bottom: 2px;
-        right: 5px;
-        color: rgba(255,255,255,0.7);
-        font-size: 0.7em;
-        font-weight: bold;
-    }
+        /* Kolom Visual Atmosfer */
+        .atmosphere-visual {
+            width: 350px;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse; /* Urutan dari bawah ke atas */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: linear-gradient(to top, #dcf8f9, #0a2f4a);
+        }
 
-    /* Ikon/Gambar Objek Sesuai Gambar Asli */
-    .layer-icon {
-        position: absolute;
-        left: 10px;
-        opacity: 0.8;
-    }
-</style>
+        /* Styling setiap lapisan di visual */
+        .layer-zone {
+            height: 80px;
+            border-top: 1px dashed rgba(255,255,255,0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
 
-<div class="game-container">
-    <div class="column column-with-bg">
-        <div class="drop-zone atmosphere-layer-area" data-target="troposphere">
-            <span class="altitude-text">20 km</span>
-            <img src="path/to/icon-plane.png" class="layer-icon" style="width: 25px;"> <span class="label-placeholder">Taruh Troposphere</span>
+        /* Warna gradasi tiap zona (berdasarkan posisi) */
+        .layer-zone:nth-child(1) { background: rgba(220, 248, 249, 0.3); } /* Troposphere */
+        .layer-zone:nth-child(2) { background: rgba(166, 233, 241, 0.3); } /* Stratosphere */
+        .layer-zone:nth-child(3) { background: rgba(112, 197, 235, 0.3); } /* Mesosphere */
+        .layer-zone:nth-child(4) { background: rgba(62, 161, 220, 0.3); }  /* Thermosphere */
+        .layer-zone:nth-child(5) { background: rgba(10, 47, 74, 0.3); }   /* Exosphere */
+
+        .layer-zone.hover { background: rgba(233, 69, 96, 0.4); }
+        .layer-zone.correct { background: rgba(76, 175, 80, 0.6); }
+
+        .altitude {
+            position: absolute;
+            right: 10px;
+            bottom: 5px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .emoji-icon {
+            position: absolute;
+            left: 15px;
+            font-size: 2rem;
+        }
+
+        /* Kolom Nama Lapisan */
+        .label-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .draggable {
+            padding: 15px 25px;
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            cursor: grab;
+            font-weight: bold;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .draggable:active { cursor: grabbing; }
+        .draggable.hidden { visibility: hidden; }
+
+        #message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #4caf50;
+            font-weight: bold;
+            min-height: 1.5em;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 25px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Misi Penempatan Atmosfer 🚀</h1>
+    <div class="score-board">Skor: <span id="score">0</span> / 100</div>
+
+    <div class="game-container">
+        <div class="atmosphere-visual">
+            <div class="layer-zone" data-answer="troposphere">
+                <span class="emoji-icon">✈️</span>
+                <span class="altitude">0 - 20 km</span>
+                <span class="target-text">Drop Lapisan 1</span>
+            </div>
+            <div class="layer-zone" data-answer="stratosphere">
+                <span class="emoji-icon">🎈</span>
+                <span class="altitude">20 - 50 km</span>
+                <span class="target-text">Drop Lapisan 2</span>
+            </div>
+            <div class="layer-zone" data-answer="mesosphere">
+                <span class="emoji-icon">☄️</span>
+                <span class="altitude">50 - 85 km</span>
+                <span class="target-text">Drop Lapisan 3</span>
+            </div>
+            <div class="layer-zone" data-answer="thermosphere">
+                <span class="emoji-icon">🌌</span>
+                <span class="altitude">85 - 690 km</span>
+                <span class="target-text">Drop Lapisan 4</span>
+            </div>
+            <div class="layer-zone" data-answer="exosphere">
+                <span class="emoji-icon">🛰️</span>
+                <span class="altitude">> 690 km</span>
+                <span class="target-text">Drop Lapisan 5</span>
+            </div>
         </div>
-        <div class="drop-zone atmosphere-layer-area" data-target="stratosphere">
-            <span class="altitude-text">50 km</span>
-            <img src="path/to/icon-balloon.png" class="layer-icon" style="width: 20px;"> <span class="label-placeholder">Taruh Stratosphere</span>
-        </div>
-        <div class="drop-zone atmosphere-layer-area" data-target="mesosphere">
-            <span class="altitude-text">85 km</span>
-            <img src="path/to/icon-meteor.png" class="layer-icon" style="width: 25px;"> <span class="label-placeholder">Taruh Mesosphere</span>
-        </div>
-        <div class="drop-zone atmosphere-layer-area" data-target="thermosphere">
-            <span class="altitude-text">690 km</span>
-            <img src="path/to/icon-aurora.png" class="layer-icon" style="width: 40px;"> <span class="label-placeholder">Taruh Thermosphere</span>
-        </div>
-        <div class="drop-zone atmosphere-layer-area" data-target="exosphere">
-            <img src="path/to/icon-satellite.png" class="layer-icon" style="width: 30px;"> <span class="label-placeholder">Taruh Exosphere</span>
+
+        <div class="label-column" id="label-container">
+            <div class="draggable" draggable="true" id="exosphere">Exosphere</div>
+            <div class="draggable" draggable="true" id="thermosphere">Thermosphere</div>
+            <div class="draggable" draggable="true" id="mesosphere">Mesosphere</div>
+            <div class="draggable" draggable="true" id="stratosphere">Stratosphere</div>
+            <div class="draggable" draggable="true" id="troposphere">Troposphere</div>
         </div>
     </div>
 
-    <div class="column" id="layers">
-        <div class="layer-box" draggable="true" id="exosphere">Exosphere</div>
-        <div class="layer-box" draggable="true" id="thermosphere">Thermosphere</div>
-        <div class="layer-box" draggable="true" id="mesosphere">Mesosphere</div>
-        <div class="layer-box" draggable="true" id="stratosphere">Stratosphere</div>
-        <div class="layer-box" draggable="true" id="troposphere">Troposphere</div>
-    </div>
-</div>
+    <div id="message"></div>
+    <button onclick="location.reload()">Reset Game</button>
+
+    <script>
+        const draggables = document.querySelectorAll('.draggable');
+        const zones = document.querySelectorAll('.layer-zone');
+        let score = 0;
+        let solved = 0;
+
+        // Acak urutan label
+        const container = document.getElementById('label-container');
+        for (let i = container.children.length; i >= 0; i--) {
+            container.appendChild(container.children[Math.random() * i | 0]);
+        }
+
+        draggables.forEach(d => {
+            d.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text', e.target.id);
+            });
+        });
+
+        zones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => e.preventDefault());
+            zone.addEventListener('dragenter', () => zone.classList.add('hover'));
+            zone.addEventListener('dragleave', () => zone.classList.remove('hover'));
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('hover');
+                const draggedId = e.dataTransfer.getData('text');
+                const answer = zone.getAttribute('data-answer');
+
+                if (draggedId === answer && !zone.classList.contains('correct')) {
+                    zone.classList.add('correct');
+                    zone.querySelector('.target-text').innerText = draggedId.toUpperCase();
+                    document.getElementById(draggedId).classList.add('hidden');
+                    
+                    score += 20;
+                    solved++;
+                    document.getElementById('score').innerText = score;
+
+                    if (solved === 5) {
+                        document.getElementById('message').innerText = "Selamat! Kamu Berhasil! 🏆";
+                    }
+                } else {
+                    if (draggedId !== answer) alert("Salah tempat! Perhatikan ketinggian dan ikonnya.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
